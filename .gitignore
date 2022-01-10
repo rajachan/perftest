@@ -29,6 +29,8 @@ configure
 libtool
 m4/
 stamp-h1
+config
+*~
 
 # Project/Eclipse
 .cproject
@@ -56,3 +58,7 @@ debian/compat
 debian/*.log
 debian/files
 debian/perftest
+
+# vim
+*.swo
+*.swp
