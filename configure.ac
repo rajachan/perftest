@@ -228,7 +228,7 @@ AS_IF([test "x$enable_cuda" = xyes], [
        AC_DEFINE([HAVE_CUDA], [1], [Enable CUDA benchmarks])
        AC_CHECK_HEADERS([cuda.h], [],
                         [AC_MSG_ERROR([cannot include cuda.h])])
-       AC_SEARCH_LIBS([cuda], [cuMemAlloc], [],
+       AC_SEARCH_LIBS([cuMemAlloc], [cuda], [],
                       [AC_MSG_ERROR([cannot link with -lcuda])])
        ])
 
