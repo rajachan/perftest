@@ -39,7 +39,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_SUBST(MAJOR_VERSION)
 AC_SUBST(MINOR_VERSION)
 
-AC_ARG_VAR(CUDA_H_PATH, help-string)
 AC_ARG_VAR(RANLIB, ranlib tool)
 
 AC_ARG_ENABLE([ibv_wr_api],
@@ -59,13 +58,9 @@ AC_PROG_INSTALL
 LT_INIT
 AC_PROG_RANLIB
 m4_warn([obsolete],
-[The preprocessor macro `STDC_HEADERS' is obsolete.
+[The preprocessor macro 'STDC_HEADERS' is obsolete.
   Except in unusual embedded environments, you can safely include all
   ISO C90 headers unconditionally.])dnl
-# Autoupdate added the next two lines to ensure that your configure
-# script's behavior did not change.  They are probably safe to remove.
-AC_CHECK_INCLUDES_DEFAULT
-AC_PROG_EGREP
 
 AC_CHECK_HEADERS([infiniband/verbs.h],,[AC_MSG_ERROR([ibverbs header files not found])])
 AC_CHECK_LIB([ibverbs], [ibv_get_device_list], [], [AC_MSG_ERROR([libibverbs not found])])
@@ -203,6 +198,40 @@ if [test $HAVE_EX = yes]; then
 	AC_DEFINE([HAVE_EX], [1], [Have EX support])
 fi
 
+
+# Legacy option to build with CUDA support, here for backwards compatibility.
+if [test "$CUDA_H_PATH" ]; then
+	AC_MSG_WARN([You are using a deprecated method to build with CUDA support. Use the --with-cuda configure flag instead.])
+	AC_DEFINE([HAVE_CUDA], [1], [Enable CUDA feature])
+	AC_DEFINE_UNQUOTED([CUDA_PATH], "$CUDA_H_PATH" , [Enable CUDA feature])
+	LIBS=$LIBS" -lcuda"
+fi
+
+AC_ARG_ENABLE([cuda],
+              [AS_HELP_STRING([--enable-cuda],
+                              [Enable CUDA benchmarks])
+              ],
+              [],
+              [enable_cuda=no])
+
+AC_ARG_WITH([cuda],
+            [AS_HELP_STRING([--with-cuda=@<:@CUDA installation path@:>@],
+                            [Provide path to CUDA installation])
+            ],
+            [AS_CASE([$with_cuda],
+                     [yes|no], [],
+                     [CPPFLAGS="-I$with_cuda/include $CPPFLAGS"
+                      LDFLAGS="-L$with_cuda/lib64 -Wl,-rpath=$with_cuda/lib64 -L$with_cuda/lib -Wl,-rpath=$with_cuda/lib -lcuda -lcudart $LDFLAGS"])
+            ])
+
+AS_IF([test "x$enable_cuda" = xyes], [
+       AC_DEFINE([HAVE_CUDA], [1], [Enable CUDA benchmarks])
+       AC_CHECK_HEADERS([cuda.h], [],
+                        [AC_MSG_ERROR([cannot include cuda.h])])
+       AC_SEARCH_LIBS([cuda], [cuMemAlloc], [],
+                      [AC_MSG_ERROR([cannot link with -lcuda])])
+       ])
+
 AC_ARG_ENABLE([rocm],
               [AS_HELP_STRING([--enable-rocm],
                               [Enable ROCm benchmarks])
@@ -236,12 +265,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 AM_CONDITIONAL([HAVE_EX_ODP],[test "x$HAVE_EX_ODP" = "xyes"])
 if [test $HAVE_EX_ODP = yes] && [test $HAVE_EX = yes]; then
         AC_DEFINE([HAVE_EX_ODP], [1], [Have Extended  ODP support])
-fi
-
-if [test "$CUDA_H_PATH" ]; then
-	AC_DEFINE([HAVE_CUDA], [1], [Enable CUDA feature])
-	AC_DEFINE_UNQUOTED([CUDA_PATH], "$CUDA_H_PATH" , [Enable CUDA feature])
-	LIBS=$LIBS" -lcuda"
 fi
 
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <infiniband/verbs.h>]], [[struct ibv_qp_attr *attr; int x = attr->rate_limit;]])],[HAVE_PACKET_PACING=yes],[HAVE_PACKET_PACING=no])
