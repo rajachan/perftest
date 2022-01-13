@@ -224,12 +224,30 @@ AC_ARG_WITH([cuda],
                       LDFLAGS="-L$with_cuda/lib64 -Wl,-rpath=$with_cuda/lib64 -L$with_cuda/lib -Wl,-rpath=$with_cuda/lib -lcuda -lcudart $LDFLAGS"])
             ])
 
+AC_ARG_WITH([gdrcopy],
+            [AS_HELP_STRING([--with-gdrcopy=@<:@gdrcopy installation path@:>@],
+                            [Provide path to gdrcopy installation])
+            ],
+            [AS_CASE([$with_gdrcopy],
+                     [yes|no], [],
+                     [CPPFLAGS="-I$with_gdrcopy/include $CPPFLAGS"
+                      LDFLAGS="-L$with_gdrcopy/lib64 -Wl,-rpath=$with_gdrcopy/lib64 -L$with_gdrcopy/lib -Wl,-rpath=$with_gdrcopy/lib -lgdrapi $LDFLAGS"])
+            ])
+
 AS_IF([test "x$enable_cuda" = xyes], [
        AC_DEFINE([HAVE_CUDA], [1], [Enable CUDA benchmarks])
        AC_CHECK_HEADERS([cuda.h], [],
                         [AC_MSG_ERROR([cannot include cuda.h])])
        AC_SEARCH_LIBS([cuMemAlloc], [cuda], [],
                       [AC_MSG_ERROR([cannot link with -lcuda])])
+       AS_IF([test "x$with_gdrcopy" != xno], [
+             AC_DEFINE([HAVE_GDRCOPY], [1], [Enable use of gdrcopy])
+             AC_CHECK_HEADERS([gdrapi.h], [],
+                              [AC_MSG_ERROR([cannot include gdrapi.h])])
+             AC_SEARCH_LIBS([gdr_open], [gdrapi], [],
+                      [AC_MSG_ERROR([cannot link with -lgdrapi])])
+	     ])
+
        ])
 
 AC_ARG_ENABLE([rocm],
