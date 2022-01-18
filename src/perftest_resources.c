@@ -1586,6 +1586,9 @@ int create_single_mr(struct pingpong_context *ctx, struct perftest_parameters *u
 			return FAILURE;
 		}
 
+		// initialize the GPU buffer to all zeros
+		cuMemsetD8(d_A, 0, size);
+
 		printf("allocated GPU buffer address at %016llx pointer=%p\n",
 		       d_A, (void *)d_A);
 		ctx->buf[qp_index] = (void *)d_A;
@@ -4284,6 +4287,7 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 	int 			cpu_mhz = get_cpu_mhz(user_param->cpu_freq_f);
 	int 			total_gap_cycles = user_param->latency_gap * cpu_mhz;
 	cycles_t 		end_cycle, start_gap=0;
+	char host_char = 0;
 
 	#ifdef HAVE_IBV_WR_API
 	if (user_param->connection_type != RawEth)
@@ -4322,7 +4326,25 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 
 		if ((rcnt < user_param->iters || user_param->test_type == DURATION) && !(scnt < 1 && user_param->machine == SERVER)) {
 			rcnt++;
-			while (*poll_buf != (char)rcnt && user_param->state != END_STATE);
+			/*
+			 * Loop until the byte of memory at poll_buf has been updated to contain rcnt. The memory at
+			 * poll_buff is modified by the node we are communicating with via IB. We must poll like this
+			 * because there is no completion queue event when the other node does an IB write to us.
+			 */
+			if (user_param->use_cuda) {
+				#ifdef HAVE_CUDA
+				while (user_param->state != END_STATE) {
+					// read 1 byte from GPU memory via a "Device to Host" copy
+					cuMemcpyDtoH(&host_char, (CUdeviceptr) poll_buf, 1);
+
+					if (host_char == (char) rcnt) {
+						break;
+					}
+				}
+				#endif
+			} else {
+				while (*poll_buf != (char)rcnt && user_param->state != END_STATE);
+			}
 		}
 
 		if (scnt < user_param->iters || user_param->test_type == DURATION) {
@@ -4335,11 +4357,29 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 				}
 			}
 
+			++scnt;
+
+			/*
+			 * Update post_buf to the value scnt. We do this prior to updating user_parm->tposted[scnt]
+			 * so that our latency calculation does not include our local update of post_buf.
+			 */
+			if (user_param->use_cuda) {
+				#ifdef HAVE_CUDA
+				// write 1 byte to GPU memory via a "Host to Device" copy
+				host_char = (char) scnt;
+				cuMemcpyHtoD((CUdeviceptr) post_buf, &host_char, 1);
+
+				// read from GPU memory to sync everything
+				cuMemcpyDtoH(&host_char, (CUdeviceptr) post_buf, 1);
+				#endif
+			} else {
+				*post_buf = (char) scnt;
+			}
+
 			if (user_param->test_type == ITERATIONS)
 				user_param->tposted[scnt] = get_cycles();
 
-			*post_buf = (char)++scnt;
-
+			// Use IB to write the data at post_buf to the remote node
 			err = post_send_method(ctx, 0, user_param);
 
 			if (err) {
@@ -4353,6 +4393,7 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 
 		if (ccnt < user_param->iters || user_param->test_type == DURATION) {
 
+			// Wait for a completion queue event for our IB write to the remote node
 			do { ne = ibv_poll_cq(ctx->send_cq, 1, &wc); } while (ne == 0);
 
 			if(ne > 0) {
