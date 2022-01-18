@@ -3689,7 +3689,7 @@ void print_report_lat (struct perftest_parameters *user_param)
 
 	if (user_param->tst == LAT) {
 		for (i = 0; i < measure_cnt; ++i) {
-			delta[i] = user_param->tposted[i + 1] - user_param->tposted[i];
+			delta[i] = user_param->tposted[i + 1] - user_param->tposted[i] - user_param->toverhead[i + 1];
 		}
 	} else if (user_param->tst == LAT_BY_BW) {
 		for (i = 0; i < measure_cnt; ++i) {

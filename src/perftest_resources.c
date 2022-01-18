@@ -1132,6 +1132,8 @@ void alloc_ctx(struct pingpong_context *ctx,struct perftest_parameters *user_par
 	tarr_size = (user_param->noPeak) ? 1 : user_param->iters*user_param->num_of_qps;
 	ALLOCATE(user_param->tposted, cycles_t, tarr_size);
 	memset(user_param->tposted, 0, sizeof(cycles_t)*tarr_size);
+	ALLOCATE(user_param->toverhead, cycles_t, tarr_size);
+	memset(user_param->toverhead, 0, sizeof(cycles_t)*tarr_size);
 	if ((user_param->tst == LAT || user_param->tst == FS_RATE) && user_param->test_type == DURATION)
 		ALLOCATE(user_param->tcompleted, cycles_t, 1);
 
@@ -1432,6 +1434,7 @@ int destroy_ctx(struct pingpong_context *ctx,
 
 		free(user_param->tposted);
 		free(user_param->tcompleted);
+		free(user_param->toverhead);
 		free(ctx->my_addr);
 		free(ctx->rem_addr);
 		free(ctx->scnt);
@@ -1441,6 +1444,7 @@ int destroy_ctx(struct pingpong_context *ctx,
 
 		free(user_param->tposted);
 		free(user_param->tcompleted);
+		free(user_param->toverhead);
 		free(ctx->my_addr);
 	}
 	if (user_param->machine == CLIENT || user_param->tst == LAT || user_param->duplex) {
@@ -4286,7 +4290,7 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 
 	int 			cpu_mhz = get_cpu_mhz(user_param->cpu_freq_f);
 	int 			total_gap_cycles = user_param->latency_gap * cpu_mhz;
-	cycles_t 		end_cycle, start_gap=0;
+	cycles_t 		end_cycle, start_gap=0, overhead_start=0, overhead_end=0;
 	char host_char = 0;
 
 	#ifdef HAVE_IBV_WR_API
@@ -4357,6 +4361,10 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 				}
 			}
 
+			if (user_param->test_type == ITERATIONS) {
+				overhead_start = get_cycles();
+			}
+
 			++scnt;
 
 			/*
@@ -4376,8 +4384,11 @@ int run_iter_lat_write(struct pingpong_context *ctx,struct perftest_parameters *
 				*post_buf = (char) scnt;
 			}
 
-			if (user_param->test_type == ITERATIONS)
-				user_param->tposted[scnt] = get_cycles();
+			if (user_param->test_type == ITERATIONS) {
+				overhead_end = get_cycles();
+				user_param->tposted[scnt] = overhead_end;
+				user_param->toverhead[scnt] = overhead_end - overhead_start;
+			}
 
 			// Use IB to write the data at post_buf to the remote node
 			err = post_send_method(ctx, 0, user_param);
