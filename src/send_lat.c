@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 	/* Getting the relevant context from the device */
 	ctx.context = ctx_open_device(ib_dev, &user_param);
 	if (!ctx.context) {
-		fprintf(stderr, " Couldn't get context for the device\n");
+		fprintf(stderr, " OPEN bad Couldn't get context for the device\n");
 		return FAILURE;
 	}
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 
 	/* See if MTU and link type are valid and supported. */
 	if (check_link(ctx.context,&user_param)) {
-		fprintf(stderr, " Couldn't get context for the device\n");
+		fprintf(stderr, " LINK bad Couldn't get context for the device\n");
 		return FAILURE;
 	}
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 
 	/* See if MTU and link type are valid and supported. */
 	if (check_mtu(ctx.context,&user_param, &user_comm)) {
-		fprintf(stderr, " Couldn't get context for the device\n");
+		fprintf(stderr, " MTU bad Couldn't get context for the device\n");
 		return FAILURE;
 	}
 

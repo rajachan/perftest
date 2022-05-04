@@ -1069,6 +1069,8 @@ struct ibv_device* ctx_find_dev(char **ib_devname)
 	}
 
 	GET_STRING(*ib_devname, ibv_get_device_name(ib_dev));
+	fprintf(stderr, "IB Devices %d name %s\n", ib_devname);
+
 	return ib_dev;
 }
 
@@ -1111,7 +1113,7 @@ struct ibv_context* ctx_open_device(struct ibv_device *ib_dev, struct perftest_p
 	context = ibv_open_device(ib_dev);
 
 	if (!context) {
-		fprintf(stderr, " Couldn't get context for the device\n");
+		fprintf(stderr, " Couldn't get context for the device %d\n", errno);
 		return NULL;
 	}
 
