@@ -221,7 +221,7 @@ AC_ARG_WITH([cuda],
             [AS_CASE([$with_cuda],
                      [yes|no], [],
                      [CPPFLAGS="-I$with_cuda/include $CPPFLAGS"
-                      LDFLAGS="-L$with_cuda/lib64 -Wl,-rpath=$with_cuda/lib64 -L$with_cuda/lib -Wl,-rpath=$with_cuda/lib -lcuda -lcudart $LDFLAGS"])
+                      LDFLAGS="-L$with_cuda/lib64 -L$with_cuda/lib64/stubs -Wl,-rpath,$with_cuda/lib64/stubs -Wl,-rpath=$with_cuda/lib64 -L$with_cuda/lib -Wl,-rpath=$with_cuda/lib -lcuda -lcudart $LDFLAGS"])
             ])
 
 AC_ARG_WITH([gdrcopy],
