@@ -714,6 +714,7 @@ static int ethernet_server_connect(struct perftest_comm *comm)
 	int n;
 	int sockfd = -1, connfd;
 	char *src_ip = comm->rdma_params->has_source_ip ? comm->rdma_params->source_ip : NULL;
+	struct linger linger = { .l_onoff = 1, .l_linger = 0 };
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_flags    = AI_PASSIVE;
@@ -732,6 +733,7 @@ static int ethernet_server_connect(struct perftest_comm *comm)
 		if (sockfd >= 0) {
 			n = 1;
 			setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &n, sizeof n);
+			setsockopt(sockfd, SOL_SOCKET, SO_LINGER, &linger, sizeof(linger));
 			if (!bind(sockfd, t->ai_addr, t->ai_addrlen))
 				break;
 			close(sockfd);
