@@ -679,40 +679,56 @@ static void fill_ip_common(struct ibv_flow_spec* spec_info,
 	struct ibv_flow_spec_ipv4 *ipv4_spec = &spec_info->ipv4;
 	#endif
 
-	if(user_param->machine == SERVER) {
+	if (user_param->machine == SERVER) {
 		if (user_param->raw_ipv6) {
 			#ifdef HAVE_IPV6
 			memcpy(ipv6_spec->val.dst_ip,
 			       user_param->server_ip6, 16);
 			memcpy(ipv6_spec->val.src_ip,
 			       user_param->client_ip6, 16);
-			if (user_param->tos != DEF_TOS) {
-				ipv6_spec->val.traffic_class =
-					user_param->tos;
-				ipv6_spec->mask.traffic_class =
-					0xff;
-			}
-			if (user_param->flow_label) {
-				ipv6_spec->val.flow_label =
-					htonl(user_param->flow_label);
-				ipv6_spec->mask.flow_label =
-					htonl(0xfffff);
-			}
-			memcpy((void*)&ipv6_spec->mask.dst_ip, ipv6_mask, 16);
-			memcpy((void*)&ipv6_spec->mask.src_ip, ipv6_mask, 16);
 			#endif
 		} else {
 			ipv4_spec->val.dst_ip = user_param->server_ip;
 			ipv4_spec->val.src_ip = user_param->client_ip;
-			memset((void*)&ipv4_spec->mask.dst_ip, 0xFF,sizeof(ipv4_spec->mask.dst_ip));
-			memset((void*)&ipv4_spec->mask.src_ip, 0xFF,sizeof(ipv4_spec->mask.src_ip));
-			#ifdef HAVE_IPV4_EXT
-			if (user_param->tos != DEF_TOS) {
-				ipv4_spec->val.tos = user_param->tos;
-				ipv4_spec->mask.tos = 0xff;
-			}
-			#endif
 		}
+	} else {
+		if (user_param->raw_ipv6) {
+			#ifdef HAVE_IPV6
+			memcpy(ipv6_spec->val.dst_ip,
+			       user_param->client_ip6, 16);
+			memcpy(ipv6_spec->val.src_ip,
+			       user_param->server_ip6, 16);
+			#endif
+		} else {
+			ipv4_spec->val.dst_ip = user_param->client_ip;
+			ipv4_spec->val.src_ip = user_param->server_ip;
+		}
+	}
+
+	if (user_param->raw_ipv6) {
+		if (user_param->tos != DEF_TOS) {
+			ipv6_spec->val.traffic_class =
+				user_param->tos;
+			ipv6_spec->mask.traffic_class =
+				0xff;
+		}
+		if (user_param->flow_label) {
+			ipv6_spec->val.flow_label =
+				htonl(user_param->flow_label);
+			ipv6_spec->mask.flow_label =
+				htonl(0xfffff);
+		}
+		memcpy((void*)&ipv6_spec->mask.dst_ip, ipv6_mask, 16);
+		memcpy((void*)&ipv6_spec->mask.src_ip, ipv6_mask, 16);
+	} else {
+		memset((void*)&ipv4_spec->mask.dst_ip, 0xFF,sizeof(ipv4_spec->mask.dst_ip));
+		memset((void*)&ipv4_spec->mask.src_ip, 0xFF,sizeof(ipv4_spec->mask.src_ip));
+		#ifdef HAVE_IPV4_EXT
+		if (user_param->tos != DEF_TOS) {
+			ipv4_spec->val.tos = user_param->tos;
+			ipv4_spec->mask.tos = 0xff;
+		}
+		#endif
 	}
 }
 
