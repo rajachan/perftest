@@ -2307,7 +2307,7 @@ int parser(struct perftest_parameters *user_param,char *argv[], int argc)
 		switch (c) {
 
 			case 'p': user_param->port = strtol(optarg, NULL, 0); break;
-			case 'd': GET_STRING(user_param->ib_devname,strdup(optarg)); break;
+			case 'd': GET_STRING(user_param->ib_devname,strdupa(optarg)); break;
 			case 'i': user_param->ib_port = strtol(optarg, NULL, 0);
 				  if (user_param->ib_port < MIN_IB_PORT) {
 					  fprintf(stderr, "IB Port can't be less than %d\n", MIN_IB_PORT);
@@ -2347,7 +2347,7 @@ int parser(struct perftest_parameters *user_param,char *argv[], int argc)
 					  fprintf(stderr," Setting Outstanding reads only available on READ verb\n");
 					  return 1;
 				  } break;
-			case 'M': GET_STRING(user_param->user_mgid,strdup(optarg)); break;
+			case 'M': GET_STRING(user_param->user_mgid,strdupa(optarg)); break;
 			case 'r': CHECK_VALUE(user_param->rx_depth,int,MIN_RX,MAX_RX," Rx depth");
 				  if (user_param->verb != SEND && user_param->rx_depth > DEF_RX_RDMA) {
 					  fprintf(stderr," On RDMA verbs rx depth can be only 1\n");
@@ -2551,7 +2551,7 @@ int parser(struct perftest_parameters *user_param,char *argv[], int argc)
 					inline_recv_flag = 0;
 				}
 				if (rate_limit_flag) {
-					GET_STRING(user_param->rate_limit_str ,strdup(optarg));
+					GET_STRING(user_param->rate_limit_str ,strdupa(optarg));
 					user_param->rate_limit = atof(optarg);
 					if (user_param->rate_limit <= 0) {
 						fprintf(stderr, " Rate limit must be non-negative\n");
@@ -2748,7 +2748,7 @@ int parser(struct perftest_parameters *user_param,char *argv[], int argc)
 				if (source_ip_flag)
 				{
 					user_param->has_source_ip = 1;
-					GET_STRING(user_param->source_ip, strdup(optarg));
+					GET_STRING(user_param->source_ip, strdupa(optarg));
 					source_ip_flag = 0;
 				}
 				if (remote_port_flag) {
@@ -2807,15 +2807,15 @@ int parser(struct perftest_parameters *user_param,char *argv[], int argc)
 					data_enc_keys_number_flag = 0;
 				}
 				if(kek_path_flag) {
-					GET_STRING(user_param->kek_path, strdup(optarg));
+					GET_STRING(user_param->kek_path, strdupa(optarg));
 					kek_path_flag = 0;
 				}
 				if(data_enc_key_app_path_flag) {
-					GET_STRING(user_param->data_enc_key_app_path, strdup(optarg));
+					GET_STRING(user_param->data_enc_key_app_path, strdupa(optarg));
 					data_enc_key_app_path_flag = 0;
 				}
 				if(credentials_path_flag) {
-					GET_STRING(user_param->credentials_path, strdup(optarg));
+					GET_STRING(user_param->credentials_path, strdupa(optarg));
 					credentials_path_flag = 0;
 				}
 				#endif
@@ -3001,7 +3001,7 @@ int parser(struct perftest_parameters *user_param,char *argv[], int argc)
 		vlan_en = 0;
 	}
 	if (optind == argc - 1) {
-		GET_STRING(user_param->servername,strdup(argv[optind]));
+		GET_STRING(user_param->servername,strdupa(argv[optind]));
 
 	} else if (optind < argc) {
 		fprintf(stderr," Invalid Command line. Please check command rerun \n");
