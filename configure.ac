@@ -297,28 +297,6 @@ if [test $HAVE_OOO_ATTR = yes]; then
 	AC_DEFINE([HAVE_OOO_ATTR], [1], [Have Out of order data placement support])
 fi
 
-if [test $HAVE_IBV_WR_API = yes]; then
-	AC_CHECK_LIB([efa], [efadv_create_qp_ex], [HAVE_SRD=yes], [HAVE_SRD=no])
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <infiniband/efadv.h>]], [[int x = EFADV_DEVICE_ATTR_CAPS_RDMA_READ;]])],[HAVE_RDMA_READ_SRD=yes],[HAVE_RDMA_READ_SRD=no])
-	if [test $HAVE_RDMA_READ_SRD = yes]; then
-		AC_DEFINE([HAVE_SRD_WITH_RDMA_READ], [1], [Have SRD with RDMA read support])
-	fi
-else
-	AC_CHECK_LIB([efa], [efadv_create_driver_qp], [HAVE_SRD=yes], [HAVE_SRD=no])
-fi
-AM_CONDITIONAL([HAVE_SRD], [test "x$HAVE_SRD" = "xyes"])
-if [test $HAVE_SRD = yes]; then
-	AC_DEFINE([HAVE_SRD], [1], [Have SRD support])
-	AC_SUBST([LIBEFA], [-lefa])
-fi
-
-AC_CHECK_LIB([mlx5], [mlx5dv_create_qp], [HAVE_MLX5DV_LIB=yes LIBMLX5=-lmlx5], [HAVE_MLX5DV_LIB=no])
-AM_CONDITIONAL([HAVE_MLX5DV_LIB], [test "x$HAVE_MLX5DV_LIB" = "xyes"])
-if [test $HAVE_MLX5DV_LIB = yes] && [test $HAVE_MLX5DV = yes]; then
-	AC_DEFINE([HAVE_MLX5DV], [1], [Have Direct Verbs support])
-	AC_SUBST([LIBMLX5])
-fi
-
 CFLAGS="-g -Wall -D_GNU_SOURCE -O3 $CFLAGS"
 LIBS=$LIBS" -lpthread"
 AC_SUBST([LIBUMAD])
